@@ -1,0 +1,30 @@
+.hero { background: linear-gradient(135deg, #1e3c72, #2a5298); }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 190px;
+  margin: 0 auto;
+}
+.board input, .tile {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  border: 2px solid #2a5298;
+  border-radius: 8px;
+  background: #fff;
+}
+.tile.blank, .board input.blank { background: #e9ecef; color: #adb5bd; }
+.board input.invalid { border-color: #dc3545; background: #f8d7da; }
+
+.step-board { display: inline-block; margin: 8px; text-align: center; }
+.mini-board { display: grid; grid-template-columns: repeat(3, 34px); gap: 3px; }
+.mini-board div {
+  width: 34px; height: 34px; line-height: 34px;
+  text-align: center; font-weight: 700;
+  background: #2a5298; color: #fff; border-radius: 4px;
+}
+.mini-board div.blank { background: #e9ecef; color: #e9ecef; }
