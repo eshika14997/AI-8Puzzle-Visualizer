@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
       <a class="navbar-brand" href="index.html">8-Puzzle AI</a>
       <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
@@ -23,35 +23,141 @@
     </div>
   </nav>
 
-  <main class="container my-4">
-    <h2 class="mb-3">Puzzle Input</h2>
-    <p class="text-muted">Enter digits 1–8 and use <b>0</b> (or <b>_</b>) for the blank. Each digit must appear once.</p>
-
-    <div class="row g-4 text-center">
-      <div class="col-md-6">
-        <h5>Initial State</h5>
-        <div class="board" id="initialBoard"></div>
+  <main class="container-xl my-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h2 class="page-title mb-0">IDDLS Solver</h2>
+        <p class="text-muted mb-0">Depth-limited DFS, deepening one level at a time</p>
       </div>
-      <div class="col-md-6">
-        <h5>Goal State</h5>
-        <div class="board" id="goalBoard"></div>
-      </div>
+      <span id="statusBadge" class="badge status-badge">Idle</span>
     </div>
 
-    <div class="d-flex flex-wrap gap-2 justify-content-center my-4">
-      <button class="btn btn-outline-primary" id="btnDefault">Load Example</button>
-      <button class="btn btn-success" id="btnRandom">Generate Random Puzzle</button>
-      <button class="btn btn-primary" id="btnValidate">Validate Puzzle</button>
-      <button class="btn btn-warning" id="btnRun">Run IDDLS (Day 1 test)</button>
-    </div>
+    <div class="row g-4">
+      <!-- ================= LEFT COLUMN ================= -->
+      <div class="col-lg-4">
+        <div class="card panel mb-4">
+          <div class="card-header">1 · Puzzle Input</div>
+          <div class="card-body">
+            <p class="small text-muted">Digits 1–8, and <b>0</b> or <b>_</b> for the blank.</p>
+            <div class="row text-center g-3">
+              <div class="col-6"><h6>Initial</h6><div class="board" id="initialBoard"></div></div>
+              <div class="col-6"><h6>Goal</h6><div class="board" id="goalBoard"></div></div>
+            </div>
+            <div class="d-grid gap-2 mt-3">
+              <button class="btn btn-outline-primary" id="btnDefault">Load Example</button>
+              <button class="btn btn-primary" id="btnRandom">🎲 Generate Random Puzzle</button>
+            </div>
+            <div id="message" class="mt-2"></div>
+          </div>
+        </div>
 
-    <div id="message"></div>
-    <div id="result" class="mt-3"></div>
+        <div class="card panel mb-4">
+          <div class="card-header">2 · Algorithm</div>
+          <div class="card-body">
+            <select class="form-select mb-3" id="algoSelect">
+              <option>IDDLS – Iterative Deepening Depth Limited Search</option>
+            </select>
+            <label class="form-label small mb-0">Maximum depth limit: <b id="maxLimitVal">30</b></label>
+            <input type="range" class="form-range" id="maxLimit" min="5" max="31" value="30">
+            <p class="small text-muted mb-0">IDDLS tries limits 0, 1, 2, … up to this maximum.</p>
+          </div>
+        </div>
+
+        <div class="card panel">
+          <div class="card-header">3 · Controls</div>
+          <div class="card-body">
+            <div class="ctrl-grid">
+              <button id="btnRun" class="btn btn-success">▶ Run</button>
+              <button id="btnPause" class="btn btn-warning">⏸ Pause</button>
+              <button id="btnResume" class="btn btn-primary">⏵ Resume</button>
+              <button id="btnPrev" class="btn btn-outline-secondary">⏮ Prev</button>
+              <button id="btnNext" class="btn btn-outline-secondary">Next ⏭</button>
+              <button id="btnReset" class="btn btn-outline-danger">↺ Reset</button>
+            </div>
+            <button id="btnSkip" class="btn btn-dark w-100 mt-2">⏩ Skip to solution</button>
+            <label class="form-label small mt-3 mb-0">Speed: <b id="speedVal">6</b> / 10</label>
+            <input type="range" class="form-range" id="speed" min="1" max="10" value="6">
+            <div class="progress mt-2"><div id="bar" class="progress-bar bg-primary" style="width:0%"></div></div>
+            <div id="frameInfo" class="small text-muted mt-1">Frame 0 / 0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= RIGHT COLUMN ================= -->
+      <div class="col-lg-8">
+        <div class="card panel mb-4">
+          <div class="card-header d-flex justify-content-between">
+            <span>Live Search Visualization</span>
+            <span id="phaseLabel" class="small text-muted">Press Run</span>
+          </div>
+          <div class="card-body">
+            <div class="row g-4 align-items-center">
+              <div class="col-md-5 text-center">
+                <div class="stage" id="stageBoard"></div>
+                <div class="mt-2 small text-muted" id="stageCaption">Current state</div>
+              </div>
+              <div class="col-md-7">
+                <div class="row g-2 mb-3">
+                  <div class="col-6 col-sm-3"><div class="stat"><b id="sLimit">–</b><span>Depth limit</span></div></div>
+                  <div class="col-6 col-sm-3"><div class="stat"><b id="sDepth">–</b><span>Node depth</span></div></div>
+                  <div class="col-6 col-sm-3"><div class="stat"><b id="sCost">–</b><span>Path cost g(n)</span></div></div>
+                  <div class="col-6 col-sm-3"><div class="stat"><b id="sMove">–</b><span>Blank move</span></div></div>
+                  <div class="col-6 col-sm-3"><div class="stat"><b id="sGen">–</b><span>Generated</span></div></div>
+                  <div class="col-6 col-sm-3"><div class="stat"><b id="sExp">–</b><span>Expanded</span></div></div>
+                  <div class="col-6 col-sm-3"><div class="stat"><b id="sFront">–</b><span>Frontier size</span></div></div>
+                  <div class="col-6 col-sm-3"><div class="stat"><b id="sExplored">–</b><span>Explored</span></div></div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-6"><div class="mini-label">Parent node</div><div id="parentBox"></div></div>
+                  <div class="col-6"><div class="mini-label">Current node</div><div id="currentBox"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card panel mb-4">
+          <div class="card-header">Generated Successor States</div>
+          <div class="card-body"><div class="chips" id="succBox"></div></div>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-md-6">
+            <div class="card panel h-100">
+              <div class="card-header">Frontier / Open List <span class="badge bg-primary" id="frontCount">0</span></div>
+              <div class="card-body">
+                <div class="small text-muted mb-2">Stack (LIFO), top first, showing up to 8</div>
+                <div class="chips" id="frontBox"></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card panel h-100">
+              <div class="card-header">Explored / Closed List <span class="badge bg-secondary" id="exploredCount">0</span></div>
+              <div class="card-body">
+                <div class="small text-muted mb-2">This iteration, latest first, showing up to 8</div>
+                <div class="chips" id="exploredBox"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card panel mb-4">
+          <div class="card-header">Final Solution Path</div>
+          <div class="card-body" id="pathBox"></div>
+        </div>
+
+        <div class="card panel d-none" id="summary">
+          <div class="card-header" id="summaryTitle">Solution Summary</div>
+          <div class="card-body"><div class="row g-2" id="summaryGrid"></div></div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/puzzle.js"></script>
   <script src="js/iddls.js"></script>
-  <script src="js/puzzle-page.js"></script>
+  <script src="js/solver.js"></script>
 </body>
 </html>
